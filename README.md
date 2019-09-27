@@ -6,7 +6,7 @@
 
 <p align="center">
 	<br>
-	<img src="prints/VRPMap.jpg"/ >
+	<img src="prints/VRPMap.jpeg"/ >
       <br>
 </p>
 
