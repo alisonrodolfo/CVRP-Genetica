@@ -13,10 +13,9 @@ import java.util.ArrayList;
  */
 public class CaminhosControl {
     
-        // Holds our cities
+        // Detém nossas cidades
     private static ArrayList destinationCities = new ArrayList<Vertice>();
 
-    // Adds a destination city
     public static void addCliente(Vertice cliente) {
         destinationCities.add(cliente);
     }
@@ -25,13 +24,11 @@ public class CaminhosControl {
         destinationCities.clear();
     }
     
-    // Get a city
-    public static Vertice getCity(int index){
+    public static Vertice getCidade(int index){
         return (Vertice)destinationCities.get(index);
     }
     
-    // Get the number of destination cities
-    public static int numberOfCities(){
+    public static int numeroCidades(){
         return destinationCities.size();
     }
     

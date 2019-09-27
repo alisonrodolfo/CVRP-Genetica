@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.Vector;
 import javafx.collections.FXCollections;
@@ -18,7 +17,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
+
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -32,6 +31,12 @@ public class FXMLController implements Initializable {
 
     public int NUM_CLIENTES = 0;
     public int MELHOR = 0;
+
+    /* Genetica parameters */
+    public static double TAXA_MUTACAO = 0.015;
+    public static int tournamentSize = 5;
+    public static final boolean elite = true;
+    public static int MAX_GENETICA = 10000;
 
     private static final String NAME = "NAME:";
     private static final String DIMENSION = "DIMENSION:";
@@ -52,20 +57,11 @@ public class FXMLController implements Initializable {
     private static final ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>();
 
     public static final ArrayList<Vehicle> definitiveVehicles = new ArrayList<Vehicle>();
-    
-     public static final ArrayList<Vehicle> definitiveVehicles2 = new ArrayList<Vehicle>();
+
+    public static final ArrayList<Vehicle> definitiveVehicles2 = new ArrayList<Vehicle>();
 
     private long inicio = System.currentTimeMillis();
     private long fim = System.currentTimeMillis();
-
-    //VARIÁVEIS DEPENDENTES DO PROBLEMA
-    private int distanciaPercorrida = 0;
-    private boolean isPrimeiro = true;
-
-    private Random random;
-
-    @FXML
-    private Label label;
 
     @FXML
     private ChoiceBox choiceBox;
@@ -88,6 +84,15 @@ public class FXMLController implements Initializable {
     private Button handleMenuCode;
     @FXML
     private Button handleMenuLimpar;
+
+    @FXML
+    public TextField taxaMutacao;
+
+    @FXML
+    public TextField tamanhoDisputa;
+
+    @FXML
+    public TextField tamanhoGenetica;
 
     @FXML
     private TableView<Heuristica> tableView = new TableView<>();
@@ -129,17 +134,29 @@ public class FXMLController implements Initializable {
             arestas.clear();
             vehicles.clear();
             definitiveVehicles.clear();
+            definitiveVehicles2.clear();
             VEHICLE_CAPACITY = 0;
             NUM_VERTICE = 0;
             NUM_VEHICLES = 0;
             NUM_OTIMA = 0;
 
             textArea.setText("");
+            textname.setText("");
+            textdimension.setText("");
+            textvehicles.setText("");
+            textcapacity.setText("");
+            textArea.setText("");
+
+            textArea.setText("");
+
+            tamanhoDisputa.setText("" + tournamentSize);
+            tamanhoGenetica.setText("" + MAX_GENETICA);
+            taxaMutacao.setText("" + TAXA_MUTACAO);
 
             heuristica = new Heuristica();
             // + choiceBox.getValue()
-            //addAll("src/main/resources/instancias_teste/" + choiceBox.getValue());
-            addCvrpCup("src/main/resources/cvrp-cup/cvrp1.txt");
+            addAll("src/main/resources/instancias_teste/" + choiceBox.getValue());
+            //addCvrpCup("src/main/resources/cvrp-cup/cvrp1.txt");
             // read the data
 
             vizinhoMaisProximo();
@@ -161,16 +178,15 @@ public class FXMLController implements Initializable {
 
     @FXML
     public void handleMenuLimpar(ActionEvent event) throws IOException {
-        /*textArea.setText("");
+        textArea.setText("");
         textname.setText("");
         textdimension.setText("");
         textvehicles.setText("");
         textcapacity.setText("");
         textArea.setText("");
-        carregarTableViewCliente();*/
+        carregarTableViewCliente();
 
-        System.out.println(NUM_CLIENTES);
-
+        // System.out.println(NUM_CLIENTES);
     }
 
     @FXML
@@ -182,6 +198,16 @@ public class FXMLController implements Initializable {
 
     @FXML
     private void handleButtonAction(ActionEvent event) {
+        vertices.clear();
+        arestas.clear();
+        vehicles.clear();
+        definitiveVehicles.clear();
+        definitiveVehicles2.clear();
+        VEHICLE_CAPACITY = 0;
+        NUM_VERTICE = 0;
+        NUM_VEHICLES = 0;
+        NUM_OTIMA = 0;
+
         textArea.setText("");
         textname.setText("");
         textdimension.setText("");
@@ -189,21 +215,17 @@ public class FXMLController implements Initializable {
         textcapacity.setText("");
         textArea.setText("");
 
-        vertices.clear();
-        arestas.clear();
-        vehicles.clear();
-        definitiveVehicles.clear();
-        VEHICLE_CAPACITY = 0;
-        NUM_VERTICE = 0;
-        NUM_VEHICLES = 0;
-        NUM_OTIMA = 0;
-
         textArea.setText("");
 
         heuristica = new Heuristica();
+        tournamentSize = Integer.parseInt(tamanhoDisputa.getText());
+        MAX_GENETICA = Integer.parseInt(tamanhoDisputa.getText());
+        TAXA_MUTACAO = Double.parseDouble(taxaMutacao.getText());
+
+            
         // + choiceBox.getValue()
-        //addAll("src/main/resources/instancias_teste/" + choiceBox.getValue());
-        addCvrpCup("src/main/resources/cvrp-cup/cvrp3.txt");
+        addAll("src/main/resources/instancias_teste/" + choiceBox.getValue());
+        //addCvrpCup("src/main/resources/cvrp-cup/cvrp3.txt");
         // read the data
 
         vizinhoMaisProximo();
@@ -248,10 +270,6 @@ public class FXMLController implements Initializable {
 
         definitiveVehicles2.clear();
 
-        int MAX_GENETICA = NUM_VERTICE * 1000;
-        int MAX_TIME = NUM_VERTICE * 5;
-
-        random = new Random();
         int custoInicial = 0;
 
         inicio = System.currentTimeMillis();
@@ -269,24 +287,24 @@ public class FXMLController implements Initializable {
             }
 
             // Initialize population
-            Population pop = new Population(50, true);
-            custoInicial += (pop.getFittest().getDistance() + arestas.get(pop.getFittest().getCity(pop.getFittest().tourSize() - 1).getId()).get(0).getPeso());
-            System.out.println("Custo Inicial: " + (pop.getFittest().getDistance() + arestas.get(pop.getFittest().getCity(pop.getFittest().tourSize() - 1).getId()).get(0).getPeso()));
+            Populacao pop = new Populacao(50, true);
+            custoInicial += (pop.getMelhorCaminho().getDistance() + arestas.get(pop.getMelhorCaminho().getCidade(pop.getMelhorCaminho().caminhoSize() - 1).getId()).get(0).getPeso());
+            System.out.println("Custo Inicial: " + (pop.getMelhorCaminho().getDistance() + arestas.get(pop.getMelhorCaminho().getCidade(pop.getMelhorCaminho().caminhoSize() - 1).getId()).get(0).getPeso()));
             //System.out.println(pop.getFittest());
             System.out.println();
             // Evolve population for generations
-            pop = GA.evolvePopulation(pop);
-            for (int i = 0; i < 10000; i++) {
-                pop = GA.evolvePopulation(pop);
+            pop = Genetica.evolvePopulacao(pop);
+            for (int i = 0; i < MAX_GENETICA; i++) {
+                pop = Genetica.evolvePopulacao(pop);
             }
 
             System.out.println("Solução:");
 
-            MELHOR += pop.getFittest().getDistance();
-            MELHOR += arestas.get(pop.getFittest().getCity(pop.getFittest().tourSize() - 1).getId()).get(0).getPeso();
+            MELHOR += pop.getMelhorCaminho().getDistance();
+            MELHOR += arestas.get(pop.getMelhorCaminho().getCidade(pop.getMelhorCaminho().caminhoSize() - 1).getId()).get(0).getPeso();
 
             System.out.println("Custo Final " + MELHOR);
-            String print = pop.getFittest().toString();
+            String print = pop.getMelhorCaminho().toString();
 
             System.out.println("--------------------------------------------------------------------------------");
             //System.out.println("POP: @@ "+pop.getFittest().getCity(pop.getFittest().tourSize()-1).getId());
@@ -392,7 +410,7 @@ public class FXMLController implements Initializable {
 
         listCodes.add(heuristica);
 
-        //this.imprimiRota(definitiveVehicles2);
+        this.imprimiRota(definitiveVehicles2);
     }
 
     public void vizinhoMaisProximo() {
@@ -464,8 +482,6 @@ public class FXMLController implements Initializable {
             heuristica.setMediaSolucao(custoAresta(vehicles));
 
         }
-
-       
 
         this.imprimiRota(vehicles);
 
@@ -717,11 +733,12 @@ public class FXMLController implements Initializable {
 
             for (int n = 0; n < auxVehicles.size(); n++) {
                 if (auxVehicles.get(n).getId() == i) {
-                    print += "[DEPOSITO -> ";
+                    //print += "[DEPOSITO -> ";
                     for (int j = 0; j < auxVehicles.get(n).getRota().size(); j++) {
                         print += auxVehicles.get(n).getRota().get(j).getId() + " -> ";
                     }
-                    print += " DEPOSITO]\n";
+                    //print += " DEPOSITO]\n";
+                    print += "\n";
 
                     int aux1, aux2;
                     for (int j1 = 0, j2 = 1; j1 < auxVehicles.get(n).getRota().size() - 1; j1++, j2++) {
@@ -770,8 +787,6 @@ public class FXMLController implements Initializable {
                 aux2 = vehicles.get(i).getRota().get(j2).getId();
                 custoTotalAresta1 += arestas.get(aux1).get(aux2).getPeso();
             }
-            
-   
 
             auxVehicles.clear();
             for (int n = 1; n < (theAuxVehicles.getRota().size() - 2); n++) {
@@ -796,9 +811,9 @@ public class FXMLController implements Initializable {
                     custoTotalAresta2 += arestas.get(aux1).get(aux2).getPeso();
 
                 }
-                System.out.println(custoTotalAresta2+" < "+custoTotalAresta1);
+                System.out.println(custoTotalAresta2 + " < " + custoTotalAresta1);
                 if (custoTotalAresta2 < custoTotalAresta1) {
-                    
+
                     custoTotalAresta1 = custoTotalAresta2;
                     theAuxVehicles = auxVehicles.get(n - 1);
                 }
@@ -865,12 +880,9 @@ public class FXMLController implements Initializable {
 
         heuristica.setGap((int) d + "%");
 
-
         this.imprimiRota(definitiveVehicles);
 
         this.genetica();
     }
-    
-    
 
 }
