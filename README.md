@@ -1,7 +1,7 @@
-<center>
+
 # Problema de Roteamento de Véıculos Capacitados
 # (Capacitated Vehicle Routing Problem - CVRP).
-</center>
+
 	
 
 <p align="center">
